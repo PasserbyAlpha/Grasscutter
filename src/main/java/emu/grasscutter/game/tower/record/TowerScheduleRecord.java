@@ -34,7 +34,7 @@ public class TowerScheduleRecord {
 	public TowerScheduleInfo tower_schedule;
 	
 	public List<TowerFloorRecord> tower_floor_record_list;
-	public TowerCurLevelRecord cur_level_record;
+	public TowerCurLevelRecordModel cur_level_record;
 	
 	
 	public TowerScheduleRecord(GenshinPlayer player, TowerScheduleInfo new_tower_schedule){

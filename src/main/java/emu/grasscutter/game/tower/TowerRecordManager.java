@@ -1,17 +1,46 @@
 package emu.grasscutter.game.tower;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 import dev.morphia.query.experimental.filters.Filters;
 import emu.grasscutter.database.DatabaseManager;
 import emu.grasscutter.game.GenshinPlayer;
 import emu.grasscutter.game.tower.info.FloorInfo;
 import emu.grasscutter.game.tower.info.TowerScheduleInfo;
+import emu.grasscutter.game.tower.record.TowerCurLevelRecordModel;
 import emu.grasscutter.game.tower.record.TowerScheduleRecord;
+import emu.grasscutter.game.tower.record.TowerTeamInfo;
 
 public class TowerRecordManager {
 	
+	public static TowerCurLevelRecordModel getCurLevelRecord(GenshinPlayer player, TowerScheduleInfo tower_schedule) {
+		return getTowerScheduleRecord(player, tower_schedule).cur_level_record;
+	}
+	
+	public static void removeCurLevelRecord(GenshinPlayer player, TowerScheduleInfo tower_schedule) {
+		TowerScheduleRecord record = getTowerScheduleRecord(player, tower_schedule);
+		TowerCurLevelRecordModel cur_level_record = record.cur_level_record;
+		if(cur_level_record != null) {
+			record.cur_level_record = null;
+			saveTowerScheduleRecord(record);
+			DatabaseManager.getDatastore().delete(cur_level_record);
+		}
+	}
+	
+	public static TowerCurLevelRecordModel initCurLevelRecord(GenshinPlayer player, TowerScheduleInfo tower_schedule, int floor_id, List<TowerTeamInfo> team_info_list) {
+		TowerScheduleRecord record = getTowerScheduleRecord(player, tower_schedule);
+		removeCurLevelRecord(player, tower_schedule);
+		TowerCurLevelRecordModel cur_level_record = new TowerCurLevelRecordModel(player.getUid(), tower_schedule.get_tower_schedule_id(), floor_id, team_info_list);
+		DatabaseManager.getDatastore().save(cur_level_record);
+		record.cur_level_record = cur_level_record;
+		saveTowerScheduleRecord(record);
+		return cur_level_record;
+	}
+	
+	public static void saveCurLevelRecord(TowerCurLevelRecordModel cur_level_record) {
+		DatabaseManager.getDatastore().save(cur_level_record);
+	}
 	
 	public static TowerScheduleRecord getTowerScheduleRecord(GenshinPlayer player, TowerScheduleInfo tower_schedule) {
 		return getTowerScheduleRecord(player, tower_schedule, true);

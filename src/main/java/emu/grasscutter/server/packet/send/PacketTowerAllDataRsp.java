@@ -10,7 +10,9 @@ import emu.grasscutter.game.tower.TowerCurrentScheduleManager;
 import emu.grasscutter.game.tower.TowerRecordManager;
 import emu.grasscutter.game.tower.info.FloorInfo;
 import emu.grasscutter.game.tower.info.TowerScheduleInfo;
+import emu.grasscutter.game.tower.record.TowerCurLevelRecordModel;
 import emu.grasscutter.game.tower.record.TowerScheduleRecord;
+import emu.grasscutter.game.tower.record.TowerTeamInfo;
 import emu.grasscutter.net.packet.GenshinPacket;
 import emu.grasscutter.net.packet.PacketOpcodes;
 import emu.grasscutter.net.proto.TowerAllDataRspOuterClass.TowerAllDataRsp;
@@ -18,6 +20,7 @@ import emu.grasscutter.net.proto.TowerCurLevelRecordOuterClass.TowerCurLevelReco
 import emu.grasscutter.net.proto.TowerFloorRecordOuterClass.TowerFloorRecord;
 import emu.grasscutter.net.proto.TowerLevelRecordOuterClass.TowerLevelRecord;
 import emu.grasscutter.net.proto.TowerMonthlyBriefOuterClass.TowerMonthlyBrief;
+import emu.grasscutter.net.proto.TowerTeamOuterClass.TowerTeam;
 
 public class PacketTowerAllDataRsp extends GenshinPacket {
 	
@@ -35,7 +38,11 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		builder.addAllTowerFloorRecordList(genFloorRecord(current_schedule_record.tower_floor_record_list));
 		
 		//TODO load current level record for continue
-		builder.setCurLevelRecord(TowerCurLevelRecord.newBuilder().setIsEmpty(true));
+		if(current_schedule_record.cur_level_record == null) {
+			builder.setCurLevelRecord(TowerCurLevelRecord.newBuilder().setIsEmpty(true));
+		}else {
+			builder.setCurLevelRecord(getTowerCurLevelRecordBuilder(current_schedule_record.cur_level_record));
+		}
 		
 		//add schedule info
 		builder.setNextScheduleChangeTime(current_schedule_info.next_schedule_change_time);
@@ -79,7 +86,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		builder.setValidTowerRecordNum((int)TowerRecordManager.getTowerRecordNumByPlayer(player));
 		
 		TowerAllDataRsp proto = builder.build();
-		Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
+		//Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
 
 		/* deprecated
 		
@@ -153,5 +160,23 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		
 		return new ArrayList<Integer>(Arrays.asList(max_floor, max_level, total_star));
 		
+	}
+	
+	public static TowerCurLevelRecord.Builder getTowerCurLevelRecordBuilder(TowerCurLevelRecordModel cur_level_record) {
+
+		TowerCurLevelRecord.Builder builder = TowerCurLevelRecord.newBuilder();
+		
+		builder.setCurFloorId(cur_level_record.floor_id);
+		builder.setCurLevelIndex(cur_level_record.level_idx);
+		
+		for(TowerTeamInfo tower_team_info :cur_level_record.team_list) {
+			builder.addTowerTeamList(TowerTeam.newBuilder()
+					.setTowerTeamId(tower_team_info.team_id)
+					.addAllAvatarGuidList(tower_team_info.avatar_guid_list));
+		}
+		
+		builder.addAllBuffIdList(cur_level_record.buff_id_list);
+		
+		return builder;
 	}
 }

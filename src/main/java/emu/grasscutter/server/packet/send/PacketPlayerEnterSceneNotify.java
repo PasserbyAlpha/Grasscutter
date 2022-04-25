@@ -39,6 +39,38 @@ public class PacketPlayerEnterSceneNotify extends GenshinPacket {
 	public PacketPlayerEnterSceneNotify(GenshinPlayer player, EnterType type, EnterReason reason, int newScene, Position newPos) {
 		this(player, player, type, reason, newScene, newPos);
 	}
+
+
+	public PacketPlayerEnterSceneNotify(GenshinPlayer player, EnterType type, EnterReason reason, int newScene, Position newPos, int dungeon_id) {
+		super(PacketOpcodes.PlayerEnterSceneNotify);
+		
+		player.setEnterSceneToken(Utils.randomRange(1000, 99999));
+
+		// add previous scene id and pos
+		
+		
+		
+		PlayerEnterSceneNotify proto = PlayerEnterSceneNotify.newBuilder()
+				.setPrevSceneId(player.getSceneId())
+				.setPrevPos(player.getPos().toProto())
+				.setSceneId(newScene)
+				.setPos(newPos.toProto())
+				.setPrevSceneId(player.getScene().getId())
+				.setPrevPos(player.getPos().toProto())
+				.setSceneBeginTime(System.currentTimeMillis())
+				.setType(type)
+				.setTargetUid(player.getUid())
+				.setEnterSceneToken(player.getEnterSceneToken())
+				.setEnterReason(reason.getValue())
+				.setDungeonId(dungeon_id)
+				.setUnk1(1)
+				.setUnk2(newScene + "-" + player.getUid() + "-" + (int) (System.currentTimeMillis() / 1000) + "-" + 18402)
+				.build();
+		
+		this.setData(proto);
+	}
+
+
 	
 	// Teleport or go somewhere
 	public PacketPlayerEnterSceneNotify(GenshinPlayer player, GenshinPlayer target, EnterType type, EnterReason reason, int newScene, Position newPos) {
