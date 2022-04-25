@@ -37,7 +37,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		builder.setCurLevelRecord(TowerCurLevelRecord.newBuilder().setIsEmpty(true));
 		
 		//add schedule info
-		builder.setNextScheduleChangeTime(current_schedule_info.get_tower_schedule_id());
+		builder.setNextScheduleChangeTime(current_schedule_info.next_schedule_change_time);
 		builder.putAllFloorOpenTimeMap(current_schedule_info.floor_open_time_map);
 		
 		//get max floor and level
@@ -78,7 +78,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		builder.setValidTowerRecordNum((int)TowerRecordManager.getTowerRecordNumByPlayer(player));
 		
 		TowerAllDataRsp proto = builder.build();
-		Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
+//		Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
 
 		/* deprecated
 		
@@ -98,7 +98,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		this.setData(proto);
 	}
 	
-	List<TowerFloorRecord> genFloorRecord(List<emu.grasscutter.game.tower.record.TowerFloorRecord> floor_record_list){
+	public static List<TowerFloorRecord> genFloorRecord(List<emu.grasscutter.game.tower.record.TowerFloorRecord> floor_record_list){
 		
 		ArrayList<TowerFloorRecord> built_floor_record_list = new ArrayList<TowerFloorRecord>();
 		
@@ -118,7 +118,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 	}
 	
 	
-	List<TowerLevelRecord> genLevelRecord(List<emu.grasscutter.game.tower.record.TowerLevelRecord> level_record_list){
+	public static List<TowerLevelRecord> genLevelRecord(List<emu.grasscutter.game.tower.record.TowerLevelRecord> level_record_list){
 		
 		ArrayList<TowerLevelRecord> built_level_record_list = new ArrayList<TowerLevelRecord>();
 		
@@ -133,7 +133,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		return built_level_record_list;
 	}
 	
-	List<Integer> getMaxFloorLevel(List<emu.grasscutter.game.tower.record.TowerFloorRecord> floor_record_list){
+	public static List<Integer> getMaxFloorLevel(List<emu.grasscutter.game.tower.record.TowerFloorRecord> floor_record_list){
 		
 		int max_floor = 0;
 		int max_level = 0;

@@ -10,6 +10,7 @@ import emu.grasscutter.net.packet.PacketHandler;
 import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.server.game.GameSession.SessionState;
 import emu.grasscutter.server.packet.send.PacketPlayerLoginRsp;
+import emu.grasscutter.server.packet.send.PacketTowerBriefDataNotify;
 
 @Opcodes(PacketOpcodes.PlayerLoginReq) // Sends initial data packets
 public class HandlerPlayerLoginReq extends PacketHandler {
@@ -45,6 +46,10 @@ public class HandlerPlayerLoginReq extends PacketHandler {
 			session.setState(SessionState.ACTIVE);
 		}
 
+		// init tower bref info
+		session.send(new PacketTowerBriefDataNotify(player));
+		
+		
 		// Final packet to tell client logging in is done
 		session.send(new PacketPlayerLoginRsp(session));
 	}
