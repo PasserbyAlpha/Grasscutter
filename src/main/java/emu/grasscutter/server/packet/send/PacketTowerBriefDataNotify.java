@@ -38,7 +38,6 @@ public class PacketTowerBriefDataNotify extends GenshinPacket {
 		}
 		
 		TowerBriefDataNotify proto = builder.build();
-		Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
 		
 		this.setData(proto);
 	}

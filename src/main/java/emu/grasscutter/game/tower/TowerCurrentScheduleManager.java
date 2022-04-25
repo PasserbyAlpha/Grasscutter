@@ -12,7 +12,7 @@ import emu.grasscutter.game.tower.info.TowerScheduleInfo;
 public class TowerCurrentScheduleManager {
 	//set default TowerScheduleInfo
 	public static TowerScheduleInfo current_tower_schedule;
-	static int FAKE_TOWER_SCHEDULE_ID = 99970000;
+	static int FAKE_TOWER_SCHEDULE_ID = 44;
 	
 	public static void init() {
 		//use fake tower schedule as init value
@@ -42,7 +42,9 @@ public class TowerCurrentScheduleManager {
 		
 		ArrayList<FloorInfo> floor_info_list = new ArrayList<FloorInfo>();
 		
-		for(int i=99934001; i<=99934004; i++) {
+		//current batch
+		
+		for(int i: Arrays.asList(1024, 1025, 1038, 1039)) {
 			FloorInfo new_floor_info = new FloorInfo(i);
 			floor_info_list.add(new_floor_info);
 			saveTowerFloorInfo(new_floor_info);
@@ -67,8 +69,6 @@ public class TowerCurrentScheduleManager {
 			}
 		}
 	}
-	
-	
 	
 	// DB function
 	

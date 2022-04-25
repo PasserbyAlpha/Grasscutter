@@ -8,6 +8,7 @@ import emu.grasscutter.Grasscutter;
 import emu.grasscutter.game.GenshinPlayer;
 import emu.grasscutter.game.tower.TowerCurrentScheduleManager;
 import emu.grasscutter.game.tower.TowerRecordManager;
+import emu.grasscutter.game.tower.info.FloorInfo;
 import emu.grasscutter.game.tower.info.TowerScheduleInfo;
 import emu.grasscutter.game.tower.record.TowerScheduleRecord;
 import emu.grasscutter.net.packet.GenshinPacket;
@@ -78,7 +79,7 @@ public class PacketTowerAllDataRsp extends GenshinPacket {
 		builder.setValidTowerRecordNum((int)TowerRecordManager.getTowerRecordNumByPlayer(player));
 		
 		TowerAllDataRsp proto = builder.build();
-//		Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
+		Grasscutter.getLogger().info("TowerAllDataRsp: " + proto.toString());
 
 		/* deprecated
 		

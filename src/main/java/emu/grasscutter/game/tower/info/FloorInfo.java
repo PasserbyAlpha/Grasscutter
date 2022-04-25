@@ -8,6 +8,10 @@ public class FloorInfo {
 	@Id
 	int floor_id;
 	
+	public FloorInfo() {
+		floor_id = 0;
+	}
+	
 	public FloorInfo(int new_floor_id){
 		this.floor_id = new_floor_id;
 	}

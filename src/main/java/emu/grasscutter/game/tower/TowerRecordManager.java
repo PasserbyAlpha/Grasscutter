@@ -6,6 +6,7 @@ import java.util.Arrays;
 import dev.morphia.query.experimental.filters.Filters;
 import emu.grasscutter.database.DatabaseManager;
 import emu.grasscutter.game.GenshinPlayer;
+import emu.grasscutter.game.tower.info.FloorInfo;
 import emu.grasscutter.game.tower.info.TowerScheduleInfo;
 import emu.grasscutter.game.tower.record.TowerScheduleRecord;
 
@@ -26,22 +27,25 @@ public class TowerRecordManager {
 			saveTowerScheduleRecord(current_user_schedule);
 		}
 		
-		// test only
-		current_user_schedule.clear_level_with_condition_list(
-				1001,
-				1,
-				new ArrayList<Integer>(Arrays.asList(1,2,3)));
-		current_user_schedule.clear_level_with_condition_list(
-				1001,
-				2,
-				new ArrayList<Integer>(Arrays.asList(1,3)));
-		current_user_schedule.clear_level_with_condition_list(
-				1001,
-				3,
-				new ArrayList<Integer>(Arrays.asList(2)));
+		// auto unlock all level
+		for(int i=1001; i<=1008; i++) {
+			for(int j=1; j<=3; j++) {
+				current_user_schedule.clear_level_with_condition_list(
+						i,
+						j,
+						new ArrayList<Integer>());
+			}
+		}
+		
+		for(FloorInfo current_floor_info: tower_schedule.floor_list) {
+			for(int j=1; j<=3; j++) {
+				current_user_schedule.clear_level_with_condition_list(
+						current_floor_info.get_floor_id(),
+						j,
+						new ArrayList<Integer>());
+			}
+		}
 		saveTowerScheduleRecord(current_user_schedule);
-		
-		
 		
 		return current_user_schedule;
 	}
