@@ -4,6 +4,7 @@ import emu.grasscutter.game.GenshinPlayer.SceneLoadState;
 import emu.grasscutter.net.packet.GenshinPacket;
 import emu.grasscutter.net.packet.Opcodes;
 import emu.grasscutter.net.packet.PacketOpcodes;
+import emu.grasscutter.net.proto.SceneInitFinishReqOuterClass.SceneInitFinishReq;
 import emu.grasscutter.net.packet.PacketHandler;
 import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.server.packet.send.PacketHostPlayerNotify;
@@ -27,6 +28,8 @@ public class HandlerSceneInitFinishReq extends PacketHandler {
 	@Override
 	public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
 		// Info packets
+		SceneInitFinishReq req = SceneInitFinishReq.parseFrom(payload);
+		
 		session.send(new PacketServerTimeNotify());
 		session.send(new PacketWorldPlayerInfoNotify(session.getPlayer().getWorld()));
 		session.send(new PacketWorldDataNotify(session.getPlayer().getWorld()));
@@ -34,6 +37,11 @@ public class HandlerSceneInitFinishReq extends PacketHandler {
 		session.send(new GenshinPacket(PacketOpcodes.SceneForceUnlockNotify));
 		session.send(new PacketHostPlayerNotify(session.getPlayer().getWorld()));
 		
+		//handle continue
+		if(session.getPlayer().getWorld().transferPlayerInit(session.getPlayer(), req.getEnterSceneToken())){
+			//success
+		}
+
 		session.send(new PacketSceneTimeNotify(session.getPlayer()));
 		session.send(new PacketPlayerGameTimeNotify(session.getPlayer()));
 		session.send(new PacketPlayerEnterSceneInfoNotify(session.getPlayer()));

@@ -41,15 +41,11 @@ public class PacketPlayerEnterSceneNotify extends GenshinPacket {
 	}
 
 
-	public PacketPlayerEnterSceneNotify(GenshinPlayer player, EnterType type, EnterReason reason, int newScene, Position newPos, int dungeon_id) {
+	public PacketPlayerEnterSceneNotify(GenshinPlayer player, EnterType type, EnterReason reason, int newScene, Position newPos, int dungeon_id, int token) {
 		super(PacketOpcodes.PlayerEnterSceneNotify);
 		
-		player.setEnterSceneToken(Utils.randomRange(1000, 99999));
+		player.setEnterSceneToken(token);
 
-		// add previous scene id and pos
-		
-		
-		
 		PlayerEnterSceneNotify proto = PlayerEnterSceneNotify.newBuilder()
 				.setPrevSceneId(player.getSceneId())
 				.setPrevPos(player.getPos().toProto())

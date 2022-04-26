@@ -113,12 +113,7 @@ public class HandlerTowerEnterLevelReq extends PacketHandler {
 		Grasscutter.getLogger().info(Integer.toString(dungeon_scene_id));
 		Grasscutter.getLogger().info(Integer.toString(dungeon_id));
 		
-		session.send(new PacketPlayerEnterSceneNotify(session.getPlayer(), 
-				EnterType.EnterDungeon, 
-				EnterReason.DungeonEnter, 
-				dungeon_scene_id,
-				new Position((float)0, (float)-5, (float)42),
-				dungeon_id));
+		session.getPlayer().getWorld().transferPlayerToDungeonRegister(session.getPlayer(), dungeon_scene_id, new Position((float)0, (float)-5, (float)42), dungeon_id);
 	}
 
 }

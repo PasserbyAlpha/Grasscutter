@@ -104,6 +104,13 @@ public class GenshinPlayer {
 	private int mainCharacterId;
 	private boolean godmode;
 	
+	//add extra Transient data to record the position to save, or player may be saved into dungeon
+	@Transient private boolean save_position_locked;
+	@Transient private int for_save_scene_id;
+	@Transient private Position for_save_position;
+	@Transient private Position for_save_rotation;
+
+
 	@Transient private boolean paused;
 	@Transient private int enterSceneToken;
 	@Transient private SceneLoadState sceneState;
@@ -146,6 +153,11 @@ public class GenshinPlayer {
 
 		this.birthday = new PlayerBirthday();
 		this.rewardedLevels = new HashSet<>();
+
+		this.save_position_locked = false;
+		this.for_save_scene_id = 0;
+		this.for_save_position = new Position(0,0,0);
+		this.for_save_rotation = new Position(0,0,0);
 	}
 	
 	// On player creation
@@ -170,6 +182,11 @@ public class GenshinPlayer {
 		this.getNameCardList().add(210001);
 		this.getPos().set(GenshinConstants.START_POSITION);
 		this.getRotation().set(0, 307, 0);
+
+		this.save_position_locked = false;
+		this.for_save_scene_id = 0;
+		this.for_save_position = new Position(0,0,0);
+		this.for_save_rotation = new Position(0,0,0);
 	}
 
 	public int getUid() {
@@ -737,8 +754,41 @@ public class GenshinPlayer {
 		this.getTeamManager().setPlayer(this);
 	}
 	
+	public void lock_save_position(int lock_scene_id, Position lock_position, Position lock_rotation){
+		if(!this.save_position_locked){
+			this.save_position_locked = true;
+			this.for_save_scene_id = lock_scene_id;
+			this.for_save_position = lock_position;
+			this.for_save_rotation = lock_rotation;	
+		}
+	}
+
+	public void unlock_save_position(){
+		this.save_position_locked = false;
+	}
+
+
 	public void save() {
+
+		//switch position before save (if in dungeon)
+
+		int current_scene = this.sceneId;
+		Position current_pos = this.pos;
+		Position current_rot = this.rotation;
+
+		if(this.save_position_locked){
+			this.sceneId = this.for_save_scene_id;
+			this.pos = this.for_save_position;
+			this.rotation = this.for_save_rotation;
+		}
+
 		DatabaseHelper.savePlayer(this);
+
+		if(this.save_position_locked){
+			this.sceneId = current_scene;
+			this.pos = current_pos;
+			this.rotation = current_rot;
+		}
 	}
 
 	public void onLogin() {

@@ -47,7 +47,7 @@ public class TowerCurLevelRecordModel {
 		schedule_id = new_schedule_id;
 		joint_id = generate_joint_id(owner_id, schedule_id);
 		floor_id = new_floor_id;
-		level_idx = 0;
+		level_idx = 1;
 		team_list = new_team_list;
 		level_team_status = new HashMap<Long, Map<Integer, Float>>();
 		buff_id_list = new ArrayList<Integer>();

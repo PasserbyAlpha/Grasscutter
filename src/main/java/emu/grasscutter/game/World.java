@@ -3,9 +3,11 @@ package emu.grasscutter.game;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import emu.grasscutter.game.entity.GenshinEntity;
@@ -25,6 +27,8 @@ import emu.grasscutter.net.proto.AttackResultOuterClass.AttackResult;
 import emu.grasscutter.net.proto.EnterTypeOuterClass.EnterType;
 import emu.grasscutter.net.proto.VisionTypeOuterClass.VisionType;
 import emu.grasscutter.server.packet.send.PacketDelTeamEntityNotify;
+import emu.grasscutter.server.packet.send.PacketDungeonDataNotify;
+import emu.grasscutter.server.packet.send.PacketDungeonWayPointNotify;
 import emu.grasscutter.server.packet.send.PacketEntityFightPropUpdateNotify;
 import emu.grasscutter.server.packet.send.PacketLifeStateChangeNotify;
 import emu.grasscutter.server.packet.send.PacketPlayerEnterSceneNotify;
@@ -36,6 +40,7 @@ import emu.grasscutter.server.packet.send.PacketSyncTeamEntityNotify;
 import emu.grasscutter.server.packet.send.PacketWorldPlayerInfoNotify;
 import emu.grasscutter.server.packet.send.PacketWorldPlayerRTTNotify;
 import emu.grasscutter.utils.Position;
+import emu.grasscutter.utils.Utils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -48,6 +53,8 @@ public class World implements Iterable<GenshinPlayer> {
 	private int nextEntityId = 0;
 	private int nextPeerId = 0;
 	private int worldLevel;
+
+	private Map<Long, SceneSwitchCache> swtich_scene_cache;
 
 	private boolean isMultiplayer;
 	
@@ -63,6 +70,8 @@ public class World implements Iterable<GenshinPlayer> {
 		this.levelEntityId = getNextEntityId(EntityIdType.MPLEVEL);
 		this.worldLevel = player.getWorldLevel();
 		this.isMultiplayer = isMultiplayer;
+
+		this.swtich_scene_cache = new HashMap<Long, SceneSwitchCache>();
 	}
 	
 	public GenshinPlayer getHost() {
@@ -229,6 +238,167 @@ public class World implements Iterable<GenshinPlayer> {
 		} else {
 			player.sendPacket(new PacketPlayerEnterSceneNotify(player, EnterType.EnterJump, EnterReason.TransPoint, sceneId, pos));
 		}
+		return true;
+	}
+
+
+	public static class SceneSwitchCache{
+		public int token;
+		public int uid;
+
+		public Integer original_scene;
+		public Position original_pos;
+
+		public Integer target_scene;
+		public Position target_pos;
+
+		public Integer dungeon_id;
+
+		public EnterType enter_type;
+		public EnterReason enter_reason;
+
+		public SceneSwitchCache(
+			int new_token,
+			int new_uid,
+			Integer new_original_scene,
+			Position new_original_pos,
+			Integer new_target_scene,
+			Position new_target_pos,
+			Integer new_dungeon_id,
+			EnterType new_enter_type,
+			EnterReason new_enter_reason
+		){
+			token=new_token;
+			uid=new_uid;
+			original_scene=new_original_scene;
+			original_pos=new_original_pos;
+			target_scene=new_target_scene;
+			target_pos = new_target_pos;
+			dungeon_id = new_dungeon_id;
+			enter_type = new_enter_type;
+			enter_reason = new_enter_reason;
+		}
+	}
+
+	Long gen_scene_cache_id(int uid, int token){
+		return (long)uid << 32 + token;
+	}
+
+	public boolean transferPlayerToDungeonRegister(GenshinPlayer player, int sceneId, Position pos, int dungeon_id) {
+
+		if (GenshinData.getSceneDataMap().get(sceneId) == null) {
+			return false;
+		}
+		
+		//generate token for cache key
+		int token = Utils.randomRange(1000, 99999);
+
+		Integer old_scene_id = null;
+		Position old_scene_pos = null;
+
+		if (player.getScene() != null){
+			old_scene_id = player.getScene().getId();
+			old_scene_pos = player.getPos();
+		}
+
+		SceneSwitchCache current_cache = new SceneSwitchCache(
+			token,
+			player.getUid(),
+			old_scene_id,
+			old_scene_pos,
+			sceneId,
+			pos,
+			dungeon_id,
+			EnterType.EnterDungeon,
+			EnterReason.DungeonEnter
+		);
+
+		this.swtich_scene_cache.put(gen_scene_cache_id(player.getUid(), token), current_cache);
+
+		// in dungeon moving, real transfer should not happen until EnterSceneReadyReq happen
+		// if (player.getScene() != null) {
+		// 	oldSceneId = player.getScene().getId();
+		// 	player.getScene().removePlayer(player);
+		// }
+		
+		// GenshinScene scene = this.getSceneById(sceneId);
+		// scene.addPlayer(player);
+		// player.getPos().set(pos);
+		
+		// Teleport packet
+		player.sendPacket(
+			new PacketPlayerEnterSceneNotify(
+				player, 
+				EnterType.EnterDungeon, 
+				EnterReason.DungeonEnter, 
+				sceneId,
+				pos,
+				dungeon_id,
+				token));
+		return true;
+	}
+
+	public boolean transferPlayerContinue(GenshinPlayer player, int token) {
+		
+		SceneSwitchCache current_cache = this.swtich_scene_cache.get(gen_scene_cache_id(player.getUid(), token));
+		if(current_cache == null){
+			return false;
+		}
+
+		// continue transfer progress
+
+		// remove old team
+		GenshinScene original_scene = this.getSceneById(current_cache.original_scene);
+		original_scene.removePlayer(player);
+		
+
+		// lock save position if target is in dungeon
+		if(current_cache.enter_type == EnterType.EnterDungeon){
+			player.lock_save_position(
+				current_cache.original_scene, 
+				player.getPos(),
+				player.getRotation());
+		}
+
+		// transfer to new position
+		GenshinScene target_scene = this.getSceneById(current_cache.target_scene);
+		target_scene.addPlayer(player);
+		player.getPos().set(current_cache.target_pos);
+		player.getRotation().set(0, 180, 0);
+
+		// update team
+		player.getTeamManager().updateTeamEntities(null);
+
+		return true;
+	}
+
+	public boolean transferPlayerInit(GenshinPlayer player, int token) {
+		
+		SceneSwitchCache current_cache = this.swtich_scene_cache.get(gen_scene_cache_id(player.getUid(), token));
+		if(current_cache == null){
+			return false;
+		}
+
+		// continue transfer progress (init scene)
+		if(current_cache.dungeon_id != null){
+			//dungeon mode
+			player.getSession().send(new PacketDungeonWayPointNotify());
+			player.getSession().send(new PacketDungeonDataNotify());
+		}
+
+		return true;
+	}
+
+	public boolean transferPlayerPost(GenshinPlayer player, int token) {
+		
+		SceneSwitchCache current_cache = this.swtich_scene_cache.get(gen_scene_cache_id(player.getUid(), token));
+		if(current_cache == null){
+			return false;
+		}
+
+		//remove cache
+		this.swtich_scene_cache.remove(gen_scene_cache_id(player.getUid(), token));
+
 		return true;
 	}
 	
