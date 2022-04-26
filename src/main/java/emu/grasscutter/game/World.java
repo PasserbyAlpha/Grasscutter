@@ -16,6 +16,7 @@ import emu.grasscutter.game.props.EnterReason;
 import emu.grasscutter.game.props.EntityIdType;
 import emu.grasscutter.game.props.FightProperty;
 import emu.grasscutter.game.props.LifeState;
+import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.GenshinData;
 import emu.grasscutter.data.def.SceneData;
 import emu.grasscutter.game.GenshinPlayer.SceneLoadState;
@@ -35,6 +36,7 @@ import emu.grasscutter.server.packet.send.PacketPlayerEnterSceneNotify;
 import emu.grasscutter.server.packet.send.PacketSceneEntityAppearNotify;
 import emu.grasscutter.server.packet.send.PacketSceneEntityDisappearNotify;
 import emu.grasscutter.server.packet.send.PacketScenePlayerInfoNotify;
+import emu.grasscutter.server.packet.send.PacketServerBuffChangeNotify;
 import emu.grasscutter.server.packet.send.PacketSyncScenePlayTeamEntityNotify;
 import emu.grasscutter.server.packet.send.PacketSyncTeamEntityNotify;
 import emu.grasscutter.server.packet.send.PacketWorldPlayerInfoNotify;
@@ -248,6 +250,7 @@ public class World implements Iterable<GenshinPlayer> {
 
 		public Integer original_scene;
 		public Position original_pos;
+		public Position original_rot;
 
 		public Integer target_scene;
 		public Position target_pos;
@@ -257,26 +260,32 @@ public class World implements Iterable<GenshinPlayer> {
 		public EnterType enter_type;
 		public EnterReason enter_reason;
 
+		List<Integer> server_buff_to_load;
+
 		public SceneSwitchCache(
 			int new_token,
 			int new_uid,
 			Integer new_original_scene,
 			Position new_original_pos,
+			Position new_original_rot,
 			Integer new_target_scene,
 			Position new_target_pos,
 			Integer new_dungeon_id,
 			EnterType new_enter_type,
-			EnterReason new_enter_reason
+			EnterReason new_enter_reason,
+			List<Integer> new_server_buff_to_load
 		){
 			token=new_token;
 			uid=new_uid;
 			original_scene=new_original_scene;
 			original_pos=new_original_pos;
+			original_rot = new_original_rot;
 			target_scene=new_target_scene;
 			target_pos = new_target_pos;
 			dungeon_id = new_dungeon_id;
 			enter_type = new_enter_type;
 			enter_reason = new_enter_reason;
+			server_buff_to_load = new_server_buff_to_load;
 		}
 	}
 
@@ -284,7 +293,7 @@ public class World implements Iterable<GenshinPlayer> {
 		return (long)uid << 32 + token;
 	}
 
-	public boolean transferPlayerToDungeonRegister(GenshinPlayer player, int sceneId, Position pos, int dungeon_id) {
+	public boolean transferPlayerToDungeonRegister(GenshinPlayer player, int sceneId, Position pos, int dungeon_id, List<Integer> server_buff_list) {
 
 		if (GenshinData.getSceneDataMap().get(sceneId) == null) {
 			return false;
@@ -295,10 +304,12 @@ public class World implements Iterable<GenshinPlayer> {
 
 		Integer old_scene_id = null;
 		Position old_scene_pos = null;
+		Position old_scene_rot = null;
 
 		if (player.getScene() != null){
 			old_scene_id = player.getScene().getId();
-			old_scene_pos = player.getPos();
+			old_scene_pos = new Position(player.getPos());
+			old_scene_rot = new Position(player.getRotation());
 		}
 
 		SceneSwitchCache current_cache = new SceneSwitchCache(
@@ -306,11 +317,13 @@ public class World implements Iterable<GenshinPlayer> {
 			player.getUid(),
 			old_scene_id,
 			old_scene_pos,
+			old_scene_rot,
 			sceneId,
 			pos,
 			dungeon_id,
 			EnterType.EnterDungeon,
-			EnterReason.DungeonEnter
+			EnterReason.DungeonEnter,
+			server_buff_list
 		);
 
 		this.swtich_scene_cache.put(gen_scene_cache_id(player.getUid(), token), current_cache);
@@ -340,6 +353,9 @@ public class World implements Iterable<GenshinPlayer> {
 
 	public boolean transferPlayerContinue(GenshinPlayer player, int token) {
 		
+		//default unlock saving position
+		player.unlock_save_position();
+
 		SceneSwitchCache current_cache = this.swtich_scene_cache.get(gen_scene_cache_id(player.getUid(), token));
 		if(current_cache == null){
 			return false;
@@ -356,9 +372,13 @@ public class World implements Iterable<GenshinPlayer> {
 		if(current_cache.enter_type == EnterType.EnterDungeon){
 			player.lock_save_position(
 				current_cache.original_scene, 
-				player.getPos(),
-				player.getRotation());
+				current_cache.original_pos,
+				current_cache.original_rot);
 		}
+
+		Grasscutter.getLogger().info(current_cache.original_pos.toString());
+		Grasscutter.getLogger().info(current_cache.original_rot.toString());
+		
 
 		// transfer to new position
 		GenshinScene target_scene = this.getSceneById(current_cache.target_scene);
@@ -395,6 +415,21 @@ public class World implements Iterable<GenshinPlayer> {
 		if(current_cache == null){
 			return false;
 		}
+
+		//init tower buff
+		if(current_cache.server_buff_to_load != null){
+			for(int idx=1;idx<=current_cache.server_buff_to_load.size();idx++){
+				for(EntityAvatar team_avatar :player.getTeamManager().getActiveTeam()){
+					player.getSession().send(
+						new PacketServerBuffChangeNotify(
+							team_avatar.getAvatar().getGuid(),
+							current_cache.server_buff_to_load.get(idx),
+							idx 
+							));
+				}
+			}
+		}
+
 
 		//remove cache
 		this.swtich_scene_cache.remove(gen_scene_cache_id(player.getUid(), token));

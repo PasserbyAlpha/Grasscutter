@@ -6,7 +6,6 @@ import emu.grasscutter.game.tower.record.TowerCurLevelRecordModel;
 import emu.grasscutter.net.packet.GenshinPacket;
 import emu.grasscutter.net.packet.PacketOpcodes;
 import emu.grasscutter.net.proto.TowerEnterLevelRspOuterClass.TowerEnterLevelRsp;
-import emu.grasscutter.net.proto.TowerTeamSelectRspOuterClass.TowerTeamSelectRsp;
 
 public class PacketTowerEnterLevelRsp extends GenshinPacket {
 	

@@ -12,9 +12,9 @@ public class PacketDungeonDataNotify extends GenshinPacket {
 
 		DungeonDataNotify.Builder builder = DungeonDataNotify.newBuilder();
 
-		//TODO test only
-		builder.putDungeonDataMap(4, 1696);
-		builder.putDungeonDataMap(5, 1200);
+		// //TODO test only
+		// builder.putDungeonDataMap(4, 1696);
+		// builder.putDungeonDataMap(5, 1200);
 
 		DungeonDataNotify proto = builder.build();
 		

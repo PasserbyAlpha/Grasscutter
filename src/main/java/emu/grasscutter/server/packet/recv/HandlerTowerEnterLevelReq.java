@@ -4,25 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import emu.grasscutter.Grasscutter;
-import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.avatar.GenshinAvatar;
-import emu.grasscutter.game.props.EnterReason;
 import emu.grasscutter.game.props.FightProperty;
 import emu.grasscutter.game.tower.TowerCurrentScheduleManager;
 import emu.grasscutter.game.tower.TowerProgressManager;
 import emu.grasscutter.game.tower.TowerRecordManager;
 import emu.grasscutter.game.tower.info.TowerScheduleInfo;
 import emu.grasscutter.game.tower.record.TowerCurLevelRecordModel;
-import emu.grasscutter.game.tower.record.TowerScheduleRecord;
 import emu.grasscutter.game.tower.record.TowerTeamInfo;
 import emu.grasscutter.net.packet.Opcodes;
 import emu.grasscutter.net.packet.PacketOpcodes;
-import emu.grasscutter.net.proto.EnterTypeOuterClass.EnterType;
 import emu.grasscutter.net.proto.TowerEnterLevelReqOuterClass.TowerEnterLevelReq;
 import emu.grasscutter.net.packet.PacketHandler;
 import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.server.packet.send.PacketAvatarFightPropUpdateNotify;
-import emu.grasscutter.server.packet.send.PacketPlayerEnterSceneNotify;
 import emu.grasscutter.server.packet.send.PacketTowerCurLevelRecordChangeNotify;
 import emu.grasscutter.server.packet.send.PacketTowerEnterLevelRsp;
 import emu.grasscutter.server.packet.send.PacketTowerTeamSelectRsp;
@@ -113,7 +108,12 @@ public class HandlerTowerEnterLevelReq extends PacketHandler {
 		Grasscutter.getLogger().info(Integer.toString(dungeon_scene_id));
 		Grasscutter.getLogger().info(Integer.toString(dungeon_id));
 		
-		session.getPlayer().getWorld().transferPlayerToDungeonRegister(session.getPlayer(), dungeon_scene_id, new Position((float)0, (float)-5, (float)42), dungeon_id);
+		session.getPlayer().getWorld().transferPlayerToDungeonRegister(
+			session.getPlayer(), 
+			dungeon_scene_id, 
+			new Position((float)0, (float)-5, (float)42), 
+			dungeon_id,
+			cur_level_record.buff_id_list);
 	}
 
 }
